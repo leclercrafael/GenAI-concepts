@@ -13,6 +13,13 @@ from google.adk.tools import AgentTool, FunctionTool, google_search
 from google.genai import types
 
 
+load_dotenv()
+
+if not os.getenv("GOOGLE_API_KEY"):
+    raise ValueError('API key was not found')
+print('API key loaded')
+
+
 retry_config=types.HttpRetryOptions(
     attempts=5,  # Maximum retry attempts
     exp_base=7,  # Delay multiplier
@@ -32,7 +39,7 @@ class ResearchAgent(BaseAgent):
                                     instruction='You are a researcher agent, you are only goal is to ' \
                                     'find two or three informations on the given topic and present the findings with citation',
                                     tools = [google_search],
-                                    output_key='research-findings'
+                                    output_key='research_findings'
                                     )
 
 
@@ -41,7 +48,7 @@ class ResearchAgent(BaseAgent):
                                     name = 'summarizer',
                                     model = Gemini(retry_options=retry_config, model='gemini-2.5-flash-lite'),
                                     instruction = 'Your only goal is to summarize in 100 words the informations on a ' \
-                                    'topic I am going to give to you. Here are the information : {research-findings}' ,
+                                    'topic I am going to give to you. Here are the information : {research_findings}' ,
                                     output_key= 'summary'
                                     )
         
@@ -59,9 +66,12 @@ class ResearchAgent(BaseAgent):
     async def run(self, input : str) -> str :
         
         runner = InMemoryRunner(agent=self.root_agent)
-        response = await runner.run_debug(self.input)
+        response = await runner.run_debug(input)
 
         return response
     
-    
+
+
+
+
 
