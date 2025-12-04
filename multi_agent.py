@@ -71,7 +71,11 @@ class ResearchAgent(BaseAgent):
         return response
     
 
+if __name__ == "__main__":
 
+    research_agent = ResearchAgent()
+    user_input = input()
+    asyncio.run(research_agent.run(user_input))
 
 
 

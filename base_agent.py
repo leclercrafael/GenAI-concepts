@@ -9,6 +9,4 @@ class BaseAgent(abc.ABC):
     @abc.abstractmethod
     def run(self)->None:
         pass
-    @abc.abstractmethod
-    def root_agent(self)->None:
-        pass
+
