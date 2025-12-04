@@ -5,7 +5,7 @@ import google
 import warnings
 import logging
 
-from base_agent import BaseAgent
+from abstract_agent import AbstractAgent
 
 from rich.console import Console
 from rich.markdown import Markdown
@@ -20,6 +20,9 @@ from google.genai import types
 
 load_dotenv()
 
+console = Console()
+
+
 if not os.getenv("GOOGLE_API_KEY"):
     raise ValueError('API key was not found')
 print('API key loaded')
@@ -32,7 +35,7 @@ retry_config=types.HttpRetryOptions(
     http_status_codes=[429, 500, 503, 504], # Retry on these HTTP errors
 )
 
-class SequentialAgent(BaseAgent):
+class mySequentialAgent(AbstractAgent):
 
     def __init__(self) -> None :
         super().__init__()
@@ -76,10 +79,28 @@ class SequentialAgent(BaseAgent):
 
 
 
-        self.RootAgent = SequentialAgent(
-                                            name = 'BlogPipeline',
-                                            model 
-        )
+        self.RootAgent = SequentialAgent(name = 'BlogPipeline', sub_agents =[self.OutlineAgent, self.WriterAgent, self.EditorAgent])
 
-    async def run(self):
-        pass
+    async def run(self, input : str) -> str:
+        
+        runner = InMemoryRunner(agent=self.RootAgent)
+        response = await runner.run_debug(input)
+
+        return response
+    
+if __name__ == "__main__":
+
+    research_agent = mySequentialAgent()
+
+    console.rule("[bold green]Research Agent[/bold green]")
+    console.print('[bold] Ask your question :[/bold]', end= " ")
+    user_input = input()
+
+    if user_input:
+        with console.status("[bold green]Agents are working...[/bold green]", spinner="dots"):
+            console.print("\n")
+            asyncio.run(research_agent.run(user_input))
+
+
+    else: 
+        console.print('You did not write anything')
