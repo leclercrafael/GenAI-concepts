@@ -20,8 +20,9 @@ from google.genai import types
 
 console = Console()
 
-logging.getLogger("google.genai").setLevel(logging.ERROR)
-warnings.filterwarnings("ignore", message=".*non-text parts.*")
+warnings.simplefilter("ignore")
+logging.basicConfig(level=logging.CRITICAL)
+
 load_dotenv()
 
 if not os.getenv("GOOGLE_API_KEY"):
@@ -89,10 +90,10 @@ if __name__ == "__main__":
     user_input = input()
 
     if user_input:
-        with console.status("[bold green]L'équipe d'agents travaille...[/bold green]", spinner="dots"):
-            result = asyncio.run(research_agent.run(user_input))
-        console.print("\n")
-        console.print(Panel(Markdown(result), title="📝 RÉSULTAT FINAL", border_style="cyan"))
+        with console.status("[bold green]Agents are working...[/bold green]", spinner="dots"):
+            console.print("\n")
+            asyncio.run(research_agent.run(user_input))
+
 
     else: 
         console.print('You did not write anything')
