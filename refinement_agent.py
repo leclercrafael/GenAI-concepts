@@ -62,9 +62,57 @@ class RefinementAgent(AbstractAgent):
             output_key="critique",  # Stores the feedback in the state.
         )
 
-        self.refinement_agent = Agent(
-            
+        self.refiner_agent = Agent(
+        name="RefinerAgent",
+        model=Gemini(model="gemini-2.5-flash-lite", retry_options=retry_config),
+        instruction="""You are a story refiner. You have a story draft and critique.
+        
+        Story Draft: {current_story}
+        Critique: {critique}
+        
+        Your task is to analyze the critique.
+        - IF the critique is EXACTLY "APPROVED", you MUST call the `exit_loop` function and nothing else.
+        - OTHERWISE, rewrite the story draft to fully incorporate the feedback from the critique.""",
+        output_key="current_story",  
+        tools=[FunctionTool(self.exit_loop)],  
         )
 
+        self.story_refinement_loop = LoopAgent(
+            name="StoryRefinementLoop",
+            sub_agents=[self.critic_agent, self.refiner_agent],
+            max_iterations=5,  # Prevents infinite loops
+        )
+
+        self.root_agent = SequentialAgent(
+            name="StoryPipeline",
+            sub_agents=[self.initial_writer_agent, self.story_refinement_loop],
+        )
+
+    @staticmethod
+    def exit_loop() -> dict :
+        return {"status": "approved", "message": "Story approved. Exiting refinement loop."}
+        
+    
+    async def run(self, input : str) -> str:
+        
+        runner = InMemoryRunner(agent=self.root_agent)
+        response = await runner.run_debug(input)
+
+        return response
+    
+if __name__ == "__main__":
+
+    research_agent = RefinementAgent()
+
+    console.rule("[bold green]Refinement Agent[/bold green]")
+    console.print('[bold] Ask your question :[/bold]', end= " ")
+    user_input = input()
+
+    if user_input:
+        with console.status("[bold green]Agents are working...[/bold green]", spinner="dots"):
+            console.print("\n")
+            asyncio.run(research_agent.run(user_input))
 
 
+    else: 
+        console.print('You did not write anything')
